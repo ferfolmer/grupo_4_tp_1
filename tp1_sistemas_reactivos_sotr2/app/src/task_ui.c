@@ -81,9 +81,14 @@ void task_ui(void *argument)
 {
 	int id = 0;
 
-	ao_led_send(&led_red, AO_LED_MESSAGE_OFF);
-	ao_led_send(&led_green, AO_LED_MESSAGE_OFF);
-	ao_led_send(&led_blue, AO_LED_MESSAGE_OFF);
+	ao_led_message_t led_msg_init;
+	led_msg_init.callback = callback_;
+	led_msg_init.id = id;
+	led_msg_init.action = AO_LED_MESSAGE_OFF;
+	led_msg_init.value = 1000;
+	ao_led_send(&led_red, &led_msg_init);
+	ao_led_send(&led_green, &led_msg_init);
+	ao_led_send(&led_blue, &led_msg_init);
 
   while (true)
   {
@@ -132,7 +137,7 @@ void ao_ui_init(void)
   }
 
   BaseType_t status;
-  status = xTaskCreate(task_ui, "task_ao_ui", 128, NULL, tskIDLE_PRIORITY, NULL);
+  status = xTaskCreate(task_ui, "task_ao_ui", 128, NULL, tskIDLE_PRIORITY + 1, NULL);
   while (pdPASS != status)
   {
     // error

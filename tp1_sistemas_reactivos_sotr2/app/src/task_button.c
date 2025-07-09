@@ -67,14 +67,7 @@ extern SemaphoreHandle_t hsem_button;
 
 /********************** internal functions definition ************************/
 
-typedef enum
-{
-  BUTTON_TYPE_NONE,
-  BUTTON_TYPE_PULSE,
-  BUTTON_TYPE_SHORT,
-  BUTTON_TYPE_LONG,
-  BUTTON_TYPE__N,
-} button_type_t;
+
 
 static struct
 {
@@ -124,25 +117,26 @@ void task_button(void* argument)
     button_state = HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN);
 
     button_type_t button_type;
-    button_type = button_process_state_(button_state);
+    button_type = button_process_state_(!button_state);
 
     switch (button_type) {
       case BUTTON_TYPE_NONE:
         break;
       case BUTTON_TYPE_PULSE:
         LOGGER_INFO("button pulse");
-        ao_ui_send_event(BUTTON_TYPE_PULSE);
+        ao_ui_send_event(MSG_EVENT_BUTTON_PULSE);
         break;
       case BUTTON_TYPE_SHORT:
         LOGGER_INFO("button short");
-        ao_ui_send_event(BUTTON_TYPE_SHORT);
+        ao_ui_send_event(MSG_EVENT_BUTTON_SHORT);
         break;
       case BUTTON_TYPE_LONG:
         LOGGER_INFO("button long");
-        ao_ui_send_event(BUTTON_TYPE_LONG);
+        ao_ui_send_event(MSG_EVENT_BUTTON_LONG);
         break;
       default:
         LOGGER_INFO("button error");
+        ao_ui_send_event(MSG_EVENT__N);
         break;
     }
 
