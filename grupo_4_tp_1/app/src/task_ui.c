@@ -52,6 +52,7 @@
 #define QUEUE_LENGTH_            (5)
 #define QUEUE_ITEM_SIZE_         (sizeof(msg_event_t))
 #define UI_PQ_CAPACITY   		 10
+
 /********************** internal data declaration ****************************/
 typedef struct
 {

@@ -153,14 +153,22 @@ bool pq_pop(prio_queue_t *q, pq_item_t *out_item, TickType_t timeout){
     if(xSemaphoreTake(q->items_sem, timeout) != pdPASS){
         return false; // timeout
     }
-    xSemaphoreTake(q->mutex, portMAX_DELAY);
+    if(xSemaphoreTake(q->mutex, timeout)){
+
+    	xSemaphoreGive(q->items_sem);
+		return false;
+	}
     pq_node_t *n = NULL;
 
     // prioridad: HIGH > MED > LOW
     if(!n) n = fifo_pop(&q->fifos[PQ_PRIO_HIGH]);
     if(!n) n = fifo_pop(&q->fifos[PQ_PRIO_MED ]);
     if(!n) n = fifo_pop(&q->fifos[PQ_PRIO_LOW ]);
-    if(n){ q->size--; *out_item = n->item; vPortFree(n); }
+    if(n){
+    	q->size--;
+    	*out_item = n->item;
+    	vPortFree(n);
+    }
     xSemaphoreGive(q->mutex);
     return (n != NULL);
 }

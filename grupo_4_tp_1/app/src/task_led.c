@@ -49,11 +49,7 @@
 
 /********************** macros and definitions *******************************/
 
-//#define TASK_PERIOD_MS_          (1000)
-//#define QUEUE_LENGTH_            (1)
-//#define QUEUE_ITEM_SIZE_         (sizeof(ao_led_message_t))
-
-//extern PriorityQueueHandle_t hq_ui2led;
+#define PQ_WAITING_PERIOD_MS    50
 
 /********************** internal data declaration ****************************/
 
@@ -81,7 +77,7 @@ void task_led(void *argument)
 	{
 	    ui_led_msg_t *job = NULL;
 
-	    if (pdPASS == xPriorityQueueReceive(hq, (void**)&job, portMAX_DELAY))
+	    if (pdPASS == xPriorityQueueReceive(hq, (void**)&job, PQ_WAITING_PERIOD_MS))
 	    {
 			switch (job->color) {
 				case UI_LED_RED:
