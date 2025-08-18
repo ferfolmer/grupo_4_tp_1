@@ -48,28 +48,29 @@ extern "C" {
 
 #include "main.h"
 #include "cmsis_os.h"
+#include "priority_queue.h"
 
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
 
-typedef enum
-{
-  AO_LED_MESSAGE_ON,
-  AO_LED_MESSAGE_OFF,
-  AO_LED_MESSAGE_BLINK,
-  AO_LED_MESSAGE__N,
-} ao_led_action_t;
+//typedef enum
+//{
+//  AO_LED_MESSAGE_ON,
+//  AO_LED_MESSAGE_OFF,
+//  AO_LED_MESSAGE_BLINK,
+//  AO_LED_MESSAGE__N,
+//} ao_led_action_t;
+//
+//typedef void (*ao_led_cb_t)(int);
 
-typedef void (*ao_led_cb_t)(int);
-
-typedef struct
-{
-    int id;
-    ao_led_cb_t callback;
-    ao_led_action_t action;
-    int value;
-} ao_led_message_t;
+//typedef struct
+//{
+//    int id;
+//    ao_led_cb_t callback;
+//    ao_led_action_t action;
+//    int value;
+//} ao_led_message_t;
 
 typedef enum
 {
@@ -90,9 +91,12 @@ typedef struct
 
 void task_led(void* argument);
 
-bool ao_led_send(ao_led_handle_t* hao, ao_led_message_t* msg);
+//bool ao_led_send(ao_led_handle_t* hao, ao_led_message_t* msg);
 
-void ao_led_init(ao_led_handle_t* hao, ao_led_color color);
+//void ao_led_init(ao_led_handle_t* hao, ao_led_color color);
+
+void ao_led_init(PriorityQueueHandle_t hq);
+
 
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus

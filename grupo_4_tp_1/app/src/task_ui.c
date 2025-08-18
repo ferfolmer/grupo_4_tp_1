@@ -47,9 +47,11 @@
 #include "task_ui.h"
 #include "task_led.h"
 
+
 /********************** macros and definitions *******************************/
-#define QUEUE_LENGTH_            (1)
+#define QUEUE_LENGTH_            (5)
 #define QUEUE_ITEM_SIZE_         (sizeof(msg_event_t))
+#define UI_PQ_CAPACITY   		 10
 /********************** internal data declaration ****************************/
 typedef struct
 {
@@ -59,44 +61,33 @@ typedef struct
 
 /********************** internal data definition *****************************/
 static ao_ui_handle_t hao_;
+static PriorityQueueHandle_t hq_ui2led = NULL;
 /********************** external data definition *****************************/
-
-//extern SemaphoreHandle_t hsem_button;
-//extern SemaphoreHandle_t hsem_led;
-
-extern ao_led_handle_t led_red;
-extern ao_led_handle_t led_green;
-extern ao_led_handle_t led_blue;
+uint8_t idOrder = 0;
 
 /********************** internal functions definition ************************/
 
 /********************** external functions definition ************************/
 
-static void callback_(int id)
+static void send_led_job_(ui_led_color_t color, pq_prio_t prio)
 {
-  LOGGER_INFO("callback: %d", id);
+  ui_led_msg_t *job = pvPortMalloc(sizeof(*job));
+  if (!job) return; // manejar error si querés
+
+  job->prio = prio;
+  job->color = color;
+  job->on_time_ms = 5000;
+  job->id = idOrder;
+  (void)xPriorityQueueSend(hq_ui2led, (void* const*)&job, 0);
+  idOrder++;
 }
 
 void task_ui(void *argument)
 {
-	int id = 0;
-
-	ao_led_message_t led_msg_init;
-	led_msg_init.callback = callback_;
-	led_msg_init.id = id;
-	led_msg_init.action = AO_LED_MESSAGE_OFF;
-	led_msg_init.value = 1000;
-	ao_led_send(&led_red, &led_msg_init);
-	ao_led_send(&led_green, &led_msg_init);
-	ao_led_send(&led_blue, &led_msg_init);
+  LOGGER_INFO("task_ui iniciada");
 
   while (true)
   {
-	ao_led_message_t led_msg;
-	led_msg.callback = callback_;
-	led_msg.id = ++id;
-	led_msg.action = AO_LED_MESSAGE_BLINK;
-	led_msg.value = 1000;
 
 	msg_event_t event_msg;
 
@@ -105,16 +96,13 @@ void task_ui(void *argument)
 	  switch (event_msg)
 	  {
 		case MSG_EVENT_BUTTON_PULSE:
-		  LOGGER_INFO("led red");
-		  ao_led_send(&led_red, &led_msg);
+		  send_led_job_(UI_LED_RED, PQ_PRIO_HIGH);
 		  break;
 		case MSG_EVENT_BUTTON_SHORT:
-		  LOGGER_INFO("led green");
-		  ao_led_send(&led_green, &led_msg);
+		  send_led_job_(UI_LED_GREEN, PQ_PRIO_MED);
 		  break;
 		case MSG_EVENT_BUTTON_LONG:
-		  LOGGER_INFO("led blue");
-		  ao_led_send(&led_blue, &led_msg);
+		  send_led_job_(UI_LED_BLUE, PQ_PRIO_LOW);
 		  break;
 		default:
 		  break;
@@ -128,20 +116,26 @@ bool ao_ui_send_event(msg_event_t msg)
   return (pdPASS == xQueueSend(hao_.hqueue, (void*)&msg, 0));
 }
 
-void ao_ui_init(void)
-{
-  hao_.hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
-  while(NULL == hao_.hqueue)
-  {
-    // error
-  }
 
-  BaseType_t status;
-  status = xTaskCreate(task_ui, "task_ao_ui", 128, NULL, tskIDLE_PRIORITY + 1, NULL);
-  while (pdPASS != status)
-  {
-    // error
-  }
+PriorityQueueHandle_t ao_ui_init(void)
+{
+	hao_.hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
+	while(NULL == hao_.hqueue)
+	{
+	// error
+	}
+
+	hq_ui2led = xPriorityQueueCreate(UI_PQ_CAPACITY, sizeof(void*));
+	configASSERT(hq_ui2led != NULL);
+
+	BaseType_t status;
+	status = xTaskCreate(task_ui, "task_ao_ui", 128, NULL, tskIDLE_PRIORITY + 1, NULL);
+	while (pdPASS != status)
+	{
+	  // error
+	}
+
+    return hq_ui2led;
 }
 
 

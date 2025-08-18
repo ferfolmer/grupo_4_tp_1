@@ -44,25 +44,22 @@
 #include "logger.h"
 #include "dwt.h"
 
-#include <task_led.h>
+#include "task_led.h"
+#include "task_ui.h"
 
 /********************** macros and definitions *******************************/
 
-#define TASK_PERIOD_MS_          (1000)
+//#define TASK_PERIOD_MS_          (1000)
+//#define QUEUE_LENGTH_            (1)
+//#define QUEUE_ITEM_SIZE_         (sizeof(ao_led_message_t))
 
-#define QUEUE_LENGTH_            (1)
-#define QUEUE_ITEM_SIZE_         (sizeof(ao_led_message_t))
+//extern PriorityQueueHandle_t hq_ui2led;
 
 /********************** internal data declaration ****************************/
 
 /********************** internal functions declaration ***********************/
 
 /********************** internal data definition *****************************/
-static const char* led_color_to_string[] = {
-    [AO_LED_COLOR_RED] = "Red",
-    [AO_LED_COLOR_GREEN] = "Green",
-    [AO_LED_COLOR_BLUE] = "Blue"
-};
 
 /********************** external data definition *****************************/
 
@@ -72,58 +69,54 @@ static const char* led_color_to_string[] = {
 
 void task_led(void *argument)
 {
-	ao_led_handle_t* hao = (ao_led_handle_t*)argument;
+
+    PriorityQueueHandle_t hq = (PriorityQueueHandle_t)argument;
+
+    //Simula el apagado de los LEDs al inicio
+    LOGGER_INFO("Led RED off");
+    LOGGER_INFO("Led GREEN off");
+    LOGGER_INFO("Led BLUE off");
+
 	while (true)
 	{
-		ao_led_message_t msg;
-		if (pdPASS == xQueueReceive(hao->hqueue, &msg, portMAX_DELAY))
-		{
-			switch (msg.action) {
-			case AO_LED_MESSAGE_ON:
-				LOGGER_INFO("Led %s on", led_color_to_string[hao->color]);
-				msg.callback(msg.id);
-				break;
+	    ui_led_msg_t *job = NULL;
 
-			case AO_LED_MESSAGE_OFF:
-				LOGGER_INFO("Led %s off", led_color_to_string[hao->color]);
-				msg.callback(msg.id);
-				break;
+	    if (pdPASS == xPriorityQueueReceive(hq, (void**)&job, portMAX_DELAY))
+	    {
+			switch (job->color) {
+				case UI_LED_RED:
+					LOGGER_INFO("[%d]Led RED on",job->id);
+					vTaskDelay(pdMS_TO_TICKS(job->on_time_ms));
+					LOGGER_INFO("[%d]Led RED off",job->id);
+					break;
 
-			case AO_LED_MESSAGE_BLINK:
-				LOGGER_INFO("Led %s on", led_color_to_string[hao->color]);
-				vTaskDelay((TickType_t)((msg.value) / portTICK_PERIOD_MS));
-				LOGGER_INFO("Led %s off", led_color_to_string[hao->color]);
-				msg.callback(msg.id);
-				break;
+				case UI_LED_GREEN:
+					LOGGER_INFO("[%d]Led GREEN on",job->id);
+					vTaskDelay(pdMS_TO_TICKS(job->on_time_ms));
+					LOGGER_INFO("[%d]Led GREEN off",job->id);
+					break;
 
-			default:
-				break;
+				case UI_LED_BLUE:
+					LOGGER_INFO("[%d]Led BlUE on",job->id);
+					vTaskDelay(pdMS_TO_TICKS(job->on_time_ms));
+					LOGGER_INFO("[%d]Led BLUE off",job->id);
+					break;
+
+				default:
+					break;
+					vPortFree(job);
 			}
+
 		}
 	}
 }
 
-bool ao_led_send(ao_led_handle_t* hao, ao_led_message_t* msg)
-{
-  return (pdPASS == xQueueSend(hao->hqueue, (void*)msg, 0));
+void ao_led_init(PriorityQueueHandle_t hq) {
+  BaseType_t st = xTaskCreate(task_led, "task_ao_led", 256, (void*)hq, tskIDLE_PRIORITY + 1, NULL);
+  while (pdPASS != st) {
+	  /* error */
+	  }
 }
 
-void ao_led_init(ao_led_handle_t* hao, ao_led_color color)
-{
-  hao->color = color;
-
-  hao->hqueue = xQueueCreate(QUEUE_LENGTH_, QUEUE_ITEM_SIZE_);
-  while(NULL == hao->hqueue)
-  {
-    // error
-  }
-
-  BaseType_t status;
-  status = xTaskCreate(task_led, "task_ao_led", 128, (void* const)hao, tskIDLE_PRIORITY, NULL);
-  while (pdPASS != status)
-  {
-    // error
-  }
-}
 
 /********************** end of file ******************************************/

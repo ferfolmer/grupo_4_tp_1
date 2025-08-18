@@ -46,6 +46,7 @@ extern "C" {
 #include <stdbool.h>
 
 #include "main.h"
+#include "priority_queue.h"
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
@@ -56,6 +57,20 @@ typedef enum
   MSG_EVENT_BUTTON_LONG,
   MSG_EVENT__N,
 } msg_event_t;
+
+typedef enum {
+  UI_LED_RED,
+  UI_LED_GREEN,
+  UI_LED_BLUE,
+} ui_led_color_t;
+
+typedef struct {
+  pq_prio_t prio;      // PQ_PRIO_HIGH / PQ_PRIO_MED / PQ_PRIO_LOW
+  ui_led_color_t color;
+  uint32_t on_time_ms;
+  uint8_t id;
+} ui_led_msg_t;
+
 /********************** external data declaration ****************************/
 
 /********************** external functions declaration ***********************/
@@ -64,8 +79,9 @@ void task_ui(void* argument);
 
 bool ao_ui_send_event(msg_event_t msg);
 
-void ao_ui_init();
+//void ao_ui_init();
 
+PriorityQueueHandle_t ao_ui_init(void);
 /********************** End of CPP guard *************************************/
 #ifdef __cplusplus
 }
