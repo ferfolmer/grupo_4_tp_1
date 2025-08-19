@@ -46,7 +46,10 @@ extern "C" {
 #include <stdbool.h>
 
 #include "main.h"
-#include "priority_queue.h"
+//#include "priority_queue.h"
+#include "priority_queue_core.h"
+#include "linked_list.h"
+#include "freertos_priority_queue.h"
 /********************** macros ***********************************************/
 
 /********************** typedef **********************************************/
@@ -65,7 +68,7 @@ typedef enum {
 } ui_led_color_t;
 
 typedef struct {
-  pq_prio_t prio;      // PQ_PRIO_HIGH / PQ_PRIO_MED / PQ_PRIO_LOW
+  pq_priority_t prio;      // PQ_PRIO_HIGH / PQ_PRIO_MED / PQ_PRIO_LOW
   ui_led_color_t color;
   uint32_t on_time_ms;
   uint8_t id;

@@ -48,7 +48,9 @@ extern "C" {
 
 #include "main.h"
 #include "cmsis_os.h"
-#include "priority_queue.h"
+#include "priority_queue_core.h"
+#include "freertos_priority_queue.h"
+//#include "priority_queue.h"
 
 /********************** macros ***********************************************/
 

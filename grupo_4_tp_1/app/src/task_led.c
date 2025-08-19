@@ -46,6 +46,7 @@
 
 #include "task_led.h"
 #include "task_ui.h"
+#include "freertos_priority_queue.h"
 
 /********************** macros and definitions *******************************/
 
